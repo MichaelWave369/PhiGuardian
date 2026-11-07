@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phi-field.com/schemas/phiguardian/event-v1.json",
+  "title": "PhiGuardian event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "observedAt",
+    "category",
+    "severity",
+    "title",
+    "description",
+    "source",
+    "zone",
+    "confidence",
+    "simulated"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "observedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "category": {
+      "enum": [
+        "person",
+        "vehicle",
+        "animal",
+        "environment",
+        "sound",
+        "system"
+      ]
+    },
+    "severity": {
+      "enum": [
+        "info",
+        "caution"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 240
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "name"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "frigate",
+            "sensor"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        }
+      }
+    },
+    "zone": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 80
+    },
+    "confidence": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0,
+      "maximum": 1
+    },
+    "simulated": {
+      "const": false
+    }
+  }
+}
