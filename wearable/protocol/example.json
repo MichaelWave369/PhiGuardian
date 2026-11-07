@@ -1,0 +1,8 @@
+{
+  "protocol": "phiguardian.wearable/1",
+  "deviceId": "guardian-node-01",
+  "bootId": "9f6d4a832c17b0ea",
+  "sequence": 19,
+  "uptimeMs": 84622,
+  "kind": "sos_press"
+}
