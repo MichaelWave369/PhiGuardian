@@ -9,10 +9,10 @@ PhiGuardian is an MIT-licensed, local-first **environmental event awareness** fo
 - **Working:** Node HTTP API, versioned normalized event contract, bounded RAM-only store, token-protected sensor event ingress (disabled by default), Frigate event polling, explicit demo-mode React console, zone advisories, health/status checks, unit and HTTP tests.
 - **Not implemented:** raw USB/RTSP camera inference, acoustic analysis, biometric identification, smoke/CO monitoring, mobile push, PhiOS/OptiEyes/Gen.E-Wrist connectors, unattended reliability guarantees. These require separate adapters, permissions, and safety review.
 
-## Wearable track (architecture + translator scaffold)
+## Wearable track (protocol, translator and bench firmware)
 **Φ Guardian Wearable** is a proposed physical sensor node in the **same repository**, not a separate app. See [wearable/README.md](wearable/README.md), [wearable/HARDWARE.md](wearable/HARDWARE.md), and the [v1 wearable packet contract](wearable/protocol/event-v1.schema.json).
 
-The current scaffold includes a strict packet parser, a companion-side translator into the existing Guardian event v1 schema, and unit tests for bounded deduplication and neutral advisory language. **There is no compiled firmware, actual BLE pairing, live device integration, or tested battery life yet.** The wearable/companion path will eventually support Gen.E-Wrist and OptiEyes through explicit permissions. A button-generated SOS is *not* proof anyone was contacted.
+The wearable track includes a strict packet parser, a companion-side translator into the existing Guardian event v1 schema, and **board-targeted offline C++ firmware** with deterministic native tests and a dedicated cross-build workflow. See [firmware bench guide](wearable/firmware/README.md). **Firmware compilation does not verify a physical device.** There is no tested board, secure BLE pairing, live device integration, or measured battery life yet. The wearable/companion path will eventually support Gen.E-Wrist and OptiEyes through explicit permissions. A button-generated SOS only acknowledges the button locally and does *not* prove anyone was contacted.
 
 ## Quick start (Node.js 22+)
 ```bash
