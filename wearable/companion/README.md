@@ -1,33 +1,38 @@
 # Wearable companion interface
 
-The companion is **not a deployed phone application or a running BLE service**. This folder contains only an isolated, tested packet-to-event translator. It is designed to preserve the stable PhiGuardian v1 event shape, not to replace host security.
+**Status:** pure packet translator **plus a fail-closed localhost event relay**, with deterministic unit and end-to-end API tests. **This is not a running phone app, BLE service, authenticating device driver, emergency alert system, or approved production integration.**
 
-## Translation
-`translate.mjs` converts a strictly validated packet to a `sensor` event with `observedAt` set to the **host's receive time**, because wearable uptime is not a clock. The source is a pseudonymous device alias; confidence is null without a calibrated statistical model. Cautions are *review requests* about sensor observations.
+## Two separate responsibilities
 
-To maintain the safety boundary, this module **does not call** `POST /api/events` and does not claim to perform device pairing, Bluetooth cryptography, or remote notification. The future bridge must verify bonded/encrypted BLE transport and explicit user consent *before* forwarding packets. The normalizer's allowlist and in-process sequence checks are defense in depth, **not authentication** or complete anti-replay protection.
+1. [`translate.mjs`](translate.mjs) turns a strictly validated wearable packet into the existing Guardian `sensor` event v1 contract. The host supplies receive time because wearable uptime is not a wall clock. Confidence remains null until a calibrated model exists, and caution text is observational.
+2. [`relay.mjs`](relay.mjs) accepts an event **only after** callbacks provided by the host's trusted transport adapter verify the device's actual authenticated session and independent owner consent. It then posts the normalized event to the existing `POST /api/events` endpoint using a **host-side token** and **loopback-only URL**. It checks server acknowledgment without implying a person received a warning.
 
-## Example (pure local conversion only)
-```js
-import { WearableTranslator } from "./translate.mjs";
+**No real BLE authentication, pairing, encrypted link, OS/device identity, owner permission UI or phone companion has been implemented.** The test callbacks that return `true` do **not** authenticate anything. This relay must not be connected to an unverified sensor, raw BLE notification, website input, or publicly accessible listener. See the [trust boundary specification](../../docs/WEARABLE_COMPANION_TRUST.md).
 
-const bridge = new WearableTranslator({ allowedDeviceIds: new Set(["guardian-node-01"]) });
-const observation = bridge.accept({
-  protocol: "phiguardian.wearable/1",
-  deviceId: "guardian-node-01",
-  bootId: "9f6d4a832c17b0ea",
-  sequence: 19,
-  uptimeMs: 84622,
-  kind: "sos_press",
-});
-// observation is a normalized event object; NOT transmitted.
+## Safe integration requirements
+
+The future adapter must bind the user-approved device alias to a cryptographically authenticated peer on the actual transport, validate link state for each packet, enforce consent/revocation, and provide a separately stored host-only Guardian ingestion token (minimum 16 characters, preferably cryptographically random and much longer). The packet itself must never choose whether it is trusted or consented.
+
+`WearableRelay` takes required constructor options:
+- `translator`: `new WearableTranslator({ allowedDeviceIds })`
+- `verifyTransport(connectionContext, claimedDeviceId)`: async or sync, **independent transport-backed authentication**, not a caller-provided boolean
+- `hasOperatorConsent(deviceId)`: async or sync independent owner approval check
+- `ingestToken`: host-only local API token, not stored on the wearable
+- `baseUrl`: default `http://127.0.0.1:8787`, strictly loopback-only
+- `fetchImpl`, `timeoutMs`, `maxInflight`: optional transport/test controls
+
+Call `await relay.receive(packet, authenticConnectionContext)` only from that approved adapter. The result has a narrow status vocabulary: `blocked`, `not_sent`, `unavailable`, `not_stored`, or `stored`. **`stored` means only that Guardian's volatile memory accepted the event**, never that an emergency contact or the wearer was notified. Events are never retried or queued in this milestone. A disconnected device can lose events.
+
+`relay.revokeDevice(alias)` clears the translator's local allowlist and session state; the host **must also** revoke actual pairing/permissions and terminate the connection. A real adapter must additionally prevent alias spoofing and packet replays after reconnect or process restart.
+
+## Validation
+
+```bash
+npm test
 ```
 
-A future authenticated host process can pass `observation` to the existing Guardian ingestion API *only after* cryptographic pairing/consent/revocation checks, and with a host-side secret kept off the wearable. A manual SOS must not create a false assertion that responders were contacted.
+The HTTP integration test starts the real Guardian local API on an ephemeral loopback port, with test-only authorization callbacks. It verifies consent denial, trust failure, malformed packet rejection, duplicate protection, bearer token mismatch, unavailable API reporting, and successful **local storage acknowledgment**.
 
-## Protocol decisions
-- No raw audio, media, location, MAC address, nearby person data, or continuous motion stream in v1.
-- The host supplies wall-clock receive time and maintains a bounded volatile history.
-- A fresh random boot ID is required on every reboot. Device IDs are user-controlled aliases only.
-- Duplicate/stale sequences within a seen boot are ignored, with a bounded in-memory table. **Replay across bridge restarts or after eviction remains possible until authenticated transport handles it**.
-- BLE pairing/bonding, device revocation, message integrity, forward-security, key storage, rate limiting and privacy-preserving diagnostics are open implementation and review tasks.
+## Packet minimization
+
+No raw audio, video, GPS, nearby person identity, BLE MAC address, or continuous accelerometer signals are accepted in the v1 packet. The translator maintains bounded in-memory deduplication and does not provide persistent cryptographic replay protection. For the underlying event schema, see [shared/event.schema.json](../../shared/event.schema.json).
