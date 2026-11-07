@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://phi-field.com/schemas/phiguardian/wearable-event-v1.json",
+  "title": "PhiGuardian wearable event envelope v1 (BLE transport planned)",
+  "description": "Minimal consented sensor observation envelope. No person identifiers, locations, recordings, or raw signals.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol",
+    "deviceId",
+    "bootId",
+    "sequence",
+    "uptimeMs",
+    "kind"
+  ],
+  "properties": {
+    "protocol": {
+      "const": "phiguardian.wearable/1"
+    },
+    "deviceId": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 24,
+      "pattern": "^[a-z][a-z0-9-]+$",
+      "description": "User-assigned pseudonymous alias, NOT MAC address or serial number."
+    },
+    "bootId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{16}$",
+      "description": "Random 64-bit-per-boot session tag, never a user identifier."
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "uptimeMs": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 4294967295
+    },
+    "kind": {
+      "enum": [
+        "sos_press",
+        "impact_candidate",
+        "motion_pattern",
+        "sound_level_spike",
+        "sensor_fault",
+        "battery_low"
+      ]
+    }
+  }
+}
