@@ -1,6 +1,6 @@
 # Φ Guardian Wearable
 
-> **Status: versioned protocol, companion translator and board-targeted offline firmware source.** Native C++ tests and a PlatformIO cross-build are included. No physical wearable, Bluetooth transport, sensor measurements or battery runtime have been validated. See [hardware plan](HARDWARE.md) and [companion bridge](companion/README.md).
+> **Status: versioned protocol, companion translator, guarded local relay, and board-targeted offline firmware.** Native C++ tests, PlatformIO cross-build, and local Guardian HTTP integration tests are included. No physical wearable, secure Bluetooth transport, real consent interface, sensor measurements or battery runtime have been validated. See [hardware plan](HARDWARE.md) and [companion bridge](companion/README.md).
 
 **One Guardian, multiple interfaces.** PhiGuardian remains the environmental event service. A `wearable/` node supplies opt-in *observations*, not identity or threat judgments. Gen.E-Wrist and OptiEyes are future, permission-scoped presentation surfaces, not prerequisites for the node.
 
@@ -29,13 +29,14 @@ A disconnected wearable should still acknowledge a manual SOS button press *loca
 ## Now included
 - [Versioned, minimised wearable event envelope](protocol/event-v1.schema.json): event kind, pseudonymous user-assigned device alias, random boot session ID, strictly increasing sequence and uptime. No audio, images, identifiers of nearby people, or raw accelerometer samples in the envelope.
 - [Pure companion mapping](companion/translate.mjs): converts a verified/opted-in wearable event envelope to the **existing** `shared/event.schema.json` format. It preserves the core `source.kind = "sensor"` convention and explicitly avoids certainty about injury, danger or intent.
+- [Fail-closed local relay](companion/relay.mjs): requires separately supplied transport verification and operator consent checks before a token-authenticated loopback-only Guardian API POST. Its tests exercise the actual local HTTP server; **no real BLE authentication or real operator approval implementation is included**. See [trust boundary](../docs/WEARABLE_COMPANION_TRUST.md).
 - Node unit tests in `tests/wearable.test.mjs` for schema boundaries, event mapping, duplicate sequence rejection, unknown devices and session ordering.
 - [Rung-by-rung hardware and safety plan](HARDWARE.md), including power, secure pairing and real-world verification requirements.
 - [Guardian Node firmware bench prototype](firmware/README.md): SOS debounce/one-shot with local three-pulse haptic feedback, IMU impact *candidates* with cooldown, fault indication and native C++ tests. No BLE or cloud transport.
 
 ## Not included
 - A **physically flashed or validated** wearable, complete electronics/packaging, BLE stack, pairing/bonding implementation or OTA update path.
-- Any connection from this translator to the running Guardian API; mapping tests are isolated.
+- A deployable connected wearable or Bluetooth/USB adapter: the relay can send normalized events to Guardian *only* when a future trusted host adapter supplies legitimate device authentication and owner consent. Current tests use clearly identified stubs.
 - Continuous microphone processing, fall diagnosis, human detection, environmental gas alarms or verified 24/7 battery runtime.
 - A phone application. It is **future work** and must authenticate the BLE link before passing packets to the translator.
 
