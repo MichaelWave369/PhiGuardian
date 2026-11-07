@@ -1,6 +1,6 @@
 # Φ Guardian Wearable
 
-> **Status: protocol and architecture scaffold.** No wearable firmware, Bluetooth connectivity, physical sensor measurements, or battery runtime has been validated. See [hardware plan](HARDWARE.md) and [companion bridge](companion/README.md).
+> **Status: versioned protocol, companion translator and board-targeted offline firmware source.** Native C++ tests and a PlatformIO cross-build are included. No physical wearable, Bluetooth transport, sensor measurements or battery runtime have been validated. See [hardware plan](HARDWARE.md) and [companion bridge](companion/README.md).
 
 **One Guardian, multiple interfaces.** PhiGuardian remains the environmental event service. A `wearable/` node supplies opt-in *observations*, not identity or threat judgments. Gen.E-Wrist and OptiEyes are future, permission-scoped presentation surfaces, not prerequisites for the node.
 
@@ -31,15 +31,16 @@ A disconnected wearable should still acknowledge a manual SOS button press *loca
 - [Pure companion mapping](companion/translate.mjs): converts a verified/opted-in wearable event envelope to the **existing** `shared/event.schema.json` format. It preserves the core `source.kind = "sensor"` convention and explicitly avoids certainty about injury, danger or intent.
 - Node unit tests in `tests/wearable.test.mjs` for schema boundaries, event mapping, duplicate sequence rejection, unknown devices and session ordering.
 - [Rung-by-rung hardware and safety plan](HARDWARE.md), including power, secure pairing and real-world verification requirements.
+- [Guardian Node firmware bench prototype](firmware/README.md): SOS debounce/one-shot with local three-pulse haptic feedback, IMU impact *candidates* with cooldown, fault indication and native C++ tests. No BLE or cloud transport.
 
 ## Not included
-- Any compiled or flashed firmware; a BLE stack, pairing/bonding implementation, hardware-specific button/haptic code or OTA update path.
+- A **physically flashed or validated** wearable, complete electronics/packaging, BLE stack, pairing/bonding implementation or OTA update path.
 - Any connection from this translator to the running Guardian API; mapping tests are isolated.
 - Continuous microphone processing, fall diagnosis, human detection, environmental gas alarms or verified 24/7 battery runtime.
 - A phone application. It is **future work** and must authenticate the BLE link before passing packets to the translator.
 
 ## Milestones
-1. **Guardian Node / Rung 1:** prototype one XIAO nRF52840 Sense with real button input, safe haptic driver, IMU, battery handling, physical sensor disable and documented flash procedure. Verify haptic feedback and disconnect behavior on the bench.
+1. **Guardian Node / Rung 1:** board-targeted *offline* button/haptic and IMU source is in place with native tests and CI build. Next: flash a real XIAO nRF52840 Sense, electrically verify haptic driver and pinout, measure power, then design protected battery handling and explicit sensor disable. Disconnect behavior awaits secure BLE.
 2. **Sensor Intelligence / Rung 2:** calibrate candidate impact signals and opt-in sound-level-only measures; collect false-positive rates in controlled tests; add calibrated environmental sensors where appropriate. A low-cost air-quality sensor is not a certified smoke, gas or CO detector.
 3. **Companion / Rung 3:** authenticated pairing/bonding, rotating session IDs, transport integrity, replay resistance across restarts, rate limits, explicit user permission and revocation, link-loss warnings and host-only consent before POST ingestion.
 4. **Field Reliability / Rung 4:** battery measurements, watchdog and brownout behavior, offline queue limits, ingress backpressure, sensor failure states, safe firmware updates, accessibility and genuine wearer trials.
