@@ -25,10 +25,11 @@ export function normalizeFrigate(raw, rules = {}) {
   const zones = Array.isArray(raw.zones) ? raw.zones.filter(z => typeof z === "string").map(z => z.slice(0, 80)) : [];
   const review = rules.reviewZones || new Set();
   const petHazards = rules.petHazardZones || new Set();
-  const caution = zones.some(zone =>
+  const matchedZone = zones.find(zone =>
     (category === "animal" && petHazards.has(zone)) ||
     ((category === "person" || category === "vehicle") && review.has(zone))
   );
+  const caution = Boolean(matchedZone);
   const score = raw.data?.score;
   const confidence = typeof score === "number" && Number.isFinite(score) && score >= 0 && score <= 1 ? score : null;
   const item = label.charAt(0).toUpperCase() + label.slice(1);
@@ -41,7 +42,7 @@ export function normalizeFrigate(raw, rules = {}) {
     title: item + " observed",
     description: caution ? "Observed in a configured review zone; please verify the context." : "Object observed by a configured local camera.",
     source: { kind: "frigate", name: camera },
-    zone: zones[0] || null,
+    zone: matchedZone || zones[0] || null,
     confidence,
     simulated: false,
   };
