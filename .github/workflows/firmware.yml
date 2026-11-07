@@ -1,0 +1,37 @@
+name: Guardian Node firmware
+on:
+  push:
+    branches: [main, "feat/**"]
+    paths:
+      - "wearable/firmware/**"
+      - ".github/workflows/firmware.yml"
+  pull_request:
+    paths:
+      - "wearable/firmware/**"
+      - ".github/workflows/firmware.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  logic-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Compile and test deterministic state machine
+        run: |
+          g++ -std=c++17 -Wall -Wextra -Werror -pedantic wearable/firmware/tests/logic_test.cpp wearable/firmware/src/guardian_logic.cpp -o /tmp/phiguardian-node-tests
+          /tmp/phiguardian-node-tests
+  board-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install pinned PlatformIO
+        run: python -m pip install --disable-pip-version-check 'platformio==6.1.18'
+      - name: Compile XIAO nRF52840 bench firmware
+        run: pio run --project-dir wearable/firmware --environment guardian_node
